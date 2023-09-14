@@ -1,6 +1,6 @@
 drop table users;
 
-drop type Account;
+drop type if exists Account;
 
 create type Account as (
     id varchar(20),

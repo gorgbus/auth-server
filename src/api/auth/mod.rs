@@ -24,6 +24,7 @@ pub fn routes() -> Router<AppState> {
         .nest("/steam", steam::routes())
         .route("/:app_id/token", post(gen_tokens))
         .route("/:app_id/token/refresh", post(refresh_tokens))
+        .route("/:app_id/logout", post(logout))
 }
 
 #[derive(Debug, Serialize)]
@@ -175,4 +176,40 @@ async fn refresh_tokens(
     cookies.add(access_cookie);
 
     Ok(())
+}
+
+#[derive(Serialize)]
+struct Status {
+    status: String,
+}
+
+async fn logout(
+    cookies: Cookies,
+    Path(app_id): Path<String>,
+    State(mut state): State<AppState>,
+) -> Result<Json<Status>> {
+    let refresh_cookie = &cookies.get("refresh").ok_or(Error::AuthMissingCookie)?;
+
+    let refresh_token = refresh_cookie.value();
+
+    let user = verify_refresh_token(refresh_token)?;
+    let user_id = user.user_id;
+
+    let token_key = format!("{app_id}:{user_id}");
+
+    let token_valid: Option<String> = state
+        .redis
+        .zscore(&token_key, refresh_token)
+        .map_err(|_| Error::RedisGetFail)?;
+
+    token_valid.ok_or(Error::RedisGetEmpty)?;
+
+    state
+        .redis
+        .zrem(&token_key, refresh_token)
+        .map_err(|_| Error::RedisDelFail)?;
+
+    Ok(Json(Status {
+        status: "success".to_string(),
+    }))
 }

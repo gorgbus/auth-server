@@ -75,26 +75,22 @@ async fn gen_tokens(
 
     let mut refresh_cookie = Cookie::build("refresh", refresh_token)
         .path("/")
+        .same_site(SameSite::Lax)
         .max_age(Duration::seconds(60 * 60 * 24 * 3))
         .http_only(true);
 
     let mut access_cookie = Cookie::build("access", access_token)
         .path("/")
+        .same_site(SameSite::Lax)
         .max_age(Duration::seconds(60 * 5))
         .http_only(false);
 
     if env::var("DEV").is_err() {
         let domain = env::var("BASE_DOMAIN").unwrap();
 
-        refresh_cookie = refresh_cookie
-            .domain(domain.clone())
-            .same_site(SameSite::None)
-            .secure(true);
+        refresh_cookie = refresh_cookie.domain(domain.clone()).secure(true);
 
-        access_cookie = access_cookie
-            .domain(domain)
-            .same_site(SameSite::None)
-            .secure(true);
+        access_cookie = access_cookie.domain(domain).secure(true);
     }
 
     let refresh_cookie = refresh_cookie.finish();
@@ -147,26 +143,22 @@ async fn refresh_tokens(
 
     let mut refresh_cookie = Cookie::build("refresh", refresh_token)
         .path("/")
+        .same_site(SameSite::Lax)
         .max_age(Duration::seconds(60 * 60 * 24 * 3))
         .http_only(true);
 
     let mut access_cookie = Cookie::build("access", access_token)
         .path("/")
+        .same_site(SameSite::Lax)
         .max_age(Duration::seconds(60 * 5))
         .http_only(false);
 
     if env::var("DEV").is_err() {
         let domain = env::var("BASE_DOMAIN").unwrap();
 
-        refresh_cookie = refresh_cookie
-            .domain(domain.clone())
-            .same_site(SameSite::None)
-            .secure(true);
+        refresh_cookie = refresh_cookie.domain(domain.clone()).secure(true);
 
-        access_cookie = access_cookie
-            .domain(domain)
-            .same_site(SameSite::None)
-            .secure(true);
+        access_cookie = access_cookie.domain(domain).secure(true);
     }
 
     let refresh_cookie = refresh_cookie.finish();

@@ -93,13 +93,13 @@ async fn auth_redirect(
         r"openid.assoc_handle={}&openid.signed={}&openid.sig={}&openid.ns={}&openid.mode=check_authentication&openid.op_endpoint={}&openid.claimed_id={}&openid.identity={}&openid.return_to={}&openid.response_nonce={}",
         query.openid_assoc_handle,
         query.openid_signed,
-        query.openid_sig,
+        query.openid_sig.replace("+", "%2B"),
         query.openid_ns,
         query.openid_op_endpoint,
         query.openid_claimed_id,
         query.openid_identity,
         query.openid_return_to,
-        query.openid_response_nonce
+        query.openid_response_nonce.replace("+", "%2B")
     );
 
     let client = reqwest::Client::new();

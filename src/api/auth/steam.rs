@@ -14,7 +14,7 @@ use std::env;
 use std::str::FromStr;
 
 use crate::db::app::validate_redirect_uri;
-use crate::db::user::{create_user, get_user, Account};
+use crate::db::user::{create_user, get_user, update_user_steam, Account};
 use crate::error::Error;
 use crate::{error::Result, state::AppState};
 use serde::Deserialize;
@@ -169,8 +169,9 @@ async fn auth_redirect(
 
     let uuid = Uuid::from_str(&app_id).map_err(|_| Error::UuidFail)?;
 
-    if let None = get_user(&state.pg, uuid, &user.id.as_ref().map_or("", |id| &id)).await? {
-        create_user(&state.pg, uuid, None, Some(&user)).await?;
+    match get_user(&state.pg, uuid, user.id.as_ref().map_or("", |s| s)).await? {
+        Some(_) => update_user_steam(&state.pg, uuid, &user).await?,
+        _ => create_user(&state.pg, uuid, Some(&user), None).await?,
     }
 
     state

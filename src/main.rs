@@ -45,10 +45,8 @@ async fn main() {
         )
         .with_state(state);
 
-    let addr = SocketAddr::from((
-        [127, 0, 0, 1],
-        env::var("PORT").unwrap().parse::<u16>().unwrap(),
-    ));
+    let port = env::var("PORT").unwrap().parse::<u16>().unwrap();
+    let addr = format!("[::]:{port}").parse::<SocketAddr>().unwrap();
 
     println!("listening on {addr}");
 

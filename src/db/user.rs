@@ -53,19 +53,37 @@ pub async fn create_user(
         values ($1, row($2, $3, $4), row($5, $6, $7))
     ";
 
-    let query = sqlx::query(sql)
+    sqlx::query(sql)
         .bind(app_id)
         .bind(steam.map(|s| &s.id))
         .bind(steam.map(|s| &s.avatar))
         .bind(steam.map(|s| &s.username))
         .bind(discord.map(|d| &d.id))
         .bind(discord.map(|d| &d.avatar))
-        .bind(discord.map(|d| &d.username));
+        .bind(discord.map(|d| &d.username))
+        .execute(pool)
+        .await
+        .map_err(|_| Error::PgInsertFail)?;
 
-    query.execute(pool).await.map_err(|e| {
-        println!("{e}");
-        Error::PgInsertFail
-    })?;
+    Ok(())
+}
+
+pub async fn update_user_steam(pool: &PgPool, app_id: Uuid, steam: &Account) -> Result<()> {
+    let sql = r"
+        update users
+        set steam = row($1, $2, $3)
+        where app_id = $4 and (steam).id like $5
+    ";
+
+    sqlx::query(sql)
+        .bind(&steam.id)
+        .bind(&steam.avatar)
+        .bind(&steam.username)
+        .bind(app_id)
+        .bind(&steam.id)
+        .execute(pool)
+        .await
+        .map_err(|_| Error::PgUpdateFail)?;
 
     Ok(())
 }

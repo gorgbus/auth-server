@@ -22,6 +22,7 @@ pub enum Error {
     PgNone,
     PgFetchFail,
     PgInsertFail,
+    PgUpdateFail,
 
     UuidFail,
 

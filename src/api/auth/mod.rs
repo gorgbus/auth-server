@@ -4,9 +4,10 @@ pub mod steam;
 use std::env;
 use std::str::FromStr;
 
+use crate::db::app::{get_private_key, get_public_key};
 use crate::db::user::get_user;
 use crate::error::{Error, Result};
-use crate::jwt::{gen_access_token, gen_refresh_token, verify_refresh_token};
+use crate::jwt::{gen_access_token, gen_refresh_token, verify_token};
 use crate::state::AppState;
 use axum::extract::State;
 use axum::{extract::Path, routing::post};
@@ -56,8 +57,10 @@ async fn gen_tokens(
         .await?
         .ok_or(Error::PgNone)?;
 
-    let access_token = gen_access_token(&user, &app_id)?;
-    let refresh_token = gen_refresh_token(&user, &app_id)?;
+    let private_key = get_private_key(&state.pg, uuid).await?;
+
+    let access_token = gen_access_token(&user, &app_id, private_key.as_bytes())?;
+    let refresh_token = gen_refresh_token(&user, &app_id, private_key.as_bytes())?;
 
     let user_id = user.user_id;
 
@@ -111,7 +114,10 @@ async fn refresh_tokens(
 
     let refresh_token = refresh_cookie.value();
 
-    let user = verify_refresh_token(refresh_token)?;
+    let uuid = Uuid::from_str(&app_id).map_err(|_| Error::UuidFail)?;
+    let public_key = get_public_key(&state.pg, uuid).await?;
+
+    let user = verify_token(refresh_token, public_key.as_bytes())?;
     let user_id = user.user_id;
 
     let token_key = format!("{app_id}:{user_id}");
@@ -128,8 +134,10 @@ async fn refresh_tokens(
         .zrem(&token_key, refresh_token)
         .map_err(|_| Error::RedisDelFail)?;
 
-    let refresh_token = gen_refresh_token(&user, &app_id)?;
-    let access_token = gen_access_token(&user, &app_id)?;
+    let private_key = get_private_key(&state.pg, uuid).await?;
+
+    let refresh_token = gen_refresh_token(&user, &app_id, private_key.as_bytes())?;
+    let access_token = gen_access_token(&user, &app_id, private_key.as_bytes())?;
 
     state
         .redis
@@ -184,7 +192,10 @@ async fn logout(
 
     let refresh_token = refresh_cookie.value();
 
-    let user = verify_refresh_token(refresh_token)?;
+    let uuid = Uuid::from_str(&app_id).map_err(|_| Error::UuidFail)?;
+    let public_key = get_public_key(&state.pg, uuid).await?;
+
+    let user = verify_token(refresh_token, public_key.as_bytes())?;
     let user_id = user.user_id;
 
     let token_key = format!("{app_id}:{user_id}");

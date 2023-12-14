@@ -9,6 +9,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json, Router,
 };
+use db::app::create_app;
 use dotenv::dotenv;
 use http::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde_json::json;
@@ -16,6 +17,7 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 
 mod api;
+mod dashboard;
 mod db;
 mod error;
 mod jwt;
@@ -25,35 +27,44 @@ mod state;
 async fn main() {
     dotenv().ok();
 
+    let args: Vec<String> = env::args().collect();
+
     let state = AppState::new().await;
 
-    let router = Router::new()
-        .nest("/auth", api::auth::routes())
-        .layer(middleware::map_response(main_response_mapper))
-        .layer(CookieManagerLayer::new())
-        .layer(
-            CorsLayer::new()
-                .allow_origin(
-                    env::var("ALLOWED_ORIGINS")
-                        .unwrap()
-                        .split(",")
-                        .map(|o| o.parse().unwrap())
-                        .collect::<Vec<_>>(),
-                )
-                .allow_headers([AUTHORIZATION, CONTENT_TYPE])
-                .allow_credentials(true),
-        )
-        .with_state(state);
+    if args.len() == 2 && args[1] == "init" {
+        let app_id = create_app(&state.pg, "MAIN".to_string()).await.unwrap();
 
-    let port = env::var("PORT").unwrap().parse::<u16>().unwrap();
-    let addr = format!("[::]:{port}").parse::<SocketAddr>().unwrap();
+        println!("APP_ID: {app_id}");
+    } else {
+        let router = Router::new()
+            .nest("/api", api::routes())
+            .nest("/dashboard", dashboard::routes(state.clone()))
+            .layer(middleware::map_response(main_response_mapper))
+            .layer(CookieManagerLayer::new())
+            .layer(
+                CorsLayer::new()
+                    .allow_origin(
+                        env::var("ALLOWED_ORIGINS")
+                            .unwrap()
+                            .split(",")
+                            .map(|o| o.parse().unwrap())
+                            .collect::<Vec<_>>(),
+                    )
+                    .allow_headers([AUTHORIZATION, CONTENT_TYPE])
+                    .allow_credentials(true),
+            )
+            .with_state(state);
 
-    println!("listening on {addr}");
+        let port = env::var("PORT").unwrap().parse::<u16>().unwrap();
+        let addr = format!("[::]:{port}").parse::<SocketAddr>().unwrap();
 
-    axum::Server::bind(&addr)
-        .serve(router.into_make_service())
-        .await
-        .unwrap();
+        println!("listening on {addr}");
+
+        axum::Server::bind(&addr)
+            .serve(router.into_make_service())
+            .await
+            .unwrap();
+    }
 }
 
 async fn main_response_mapper(uri: Uri, res: Response) -> Response {

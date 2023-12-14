@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <p>{{ app.name }}</p>
+
+  <p>{{ app.id }}</p>
+
+  <pre>{{ app.public_key }}</pre>
+
+  <h3>Redirect uris</h3>
+
+  <ul id="uris">
+    {% for redirect in redirect_uris %}
+      {% include "uri.html" %}
+    {% endfor %}
+  </ul>
+
+  <h3>New redirect uri</h3>
+
+  <form
+    hx-put="/dashboard/app/{{ app.id }}/uri"
+    hx-target="#uris"
+    hx-swap="beforeend"
+    hx-on::after-request="this.reset()"
+  >
+    <input type="text" name="uri" />
+
+    <button type="submit">add</button>
+  </form>
+
+  <h3>Delete app</h3>
+
+  <form
+    hx-delete="/dashboard/app/{{ app.id }}"
+    hx-confirm="Are you sure you want to delete this app?"
+  >
+    <button type="submit">delete</button>
+  </form>
+{% endblock %}

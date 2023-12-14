@@ -23,6 +23,7 @@ pub enum Error {
     PgFetchFail,
     PgInsertFail,
     PgUpdateFail,
+    PgDeleteFail,
 
     UuidFail,
 
@@ -30,6 +31,12 @@ pub enum Error {
     JwtRefreshGenFail,
     JwtClaimsGenFail,
     JwtInvalidToken,
+    JwtEncodeGenFail,
+    JwtDecodeGenFail,
+
+    RsaGenFail,
+    RsaPrivatePEMFail,
+    RsaPublicPEMFail,
 }
 
 #[derive(Serialize)]

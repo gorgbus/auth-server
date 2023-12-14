@@ -1,0 +1,22 @@
+<li data-uri="{{ redirect.uri }}">
+  <form
+    hx-patch="/dashboard/app/{{ app.id }}/uri"
+    hx-target="li[data-uri='{{ redirect.uri }}']"
+    hx-swap="outerHTML"
+  >
+    <input type="text" name="old_uri" value="{{ redirect.uri }}" hidden />
+    <input type="text" name="new_uri" value="{{ redirect.uri }}" />
+
+    <button type="submit">update</button>
+  </form>
+
+  <form
+    hx-delete="/dashboard/app/{{ app.id }}/uri"
+    hx-target="li[data-uri='{{ redirect.uri }}']"
+    hx-swap="outerHTML"
+    hx-confirm="Are you sure you want to remove {{ redirect.uri }} uri?"
+  >
+    <input type="text" name="uri" value="{{ redirect.uri }}" hidden />
+    <button type="submit">remove</button>
+  </form>
+</li>

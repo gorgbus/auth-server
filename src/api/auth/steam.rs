@@ -171,11 +171,7 @@ async fn auth_redirect(
 
     match get_user(&state.pg, uuid, user.id.as_ref().map_or("", |s| s)).await? {
         Some(_) => update_user_steam(&state.pg, uuid, &user).await?,
-<<<<<<< HEAD
         _ => create_user(&state.pg, uuid, None, Some(&user)).await?,
-=======
-        _ => create_user(&state.pg, uuid, Some(&user), None).await?,
->>>>>>> 2b02d311391d4017fa74671bafcde2f84a32fd31
     }
 
     state
